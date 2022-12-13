@@ -26,6 +26,9 @@ get_os() {
     fi
 }
 determined_os=$(get_os)
+[ "${determined_os}" == "windows" ] && is_windows="1";
+[ "${determined_os}" == "macos" ] && is_macos="1";
+[ "${determined_os}" == "linux" ] && is_linux="1";
 
 num_procs() {
     if [ "${determined_os}" = "macos" ]; then
@@ -76,6 +79,9 @@ install_boost () {
     ./b2 \
         ${OCL_CLEAN:+"-a"} \
         -j "${num_procs}" \
+        ${is_windows:+"--layout=versioned"} \
+        ${is_macos:+"--layout=tagged-1.66"} \
+        ${is_linux:+"--layout=tagged-1.66"} \
         --layout="tagged-1.66" \
         --with-python \
         --user-config="user-config.jam" \
