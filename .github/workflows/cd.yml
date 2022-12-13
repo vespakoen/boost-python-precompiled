@@ -1,0 +1,130 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+    tags:
+      - v*
+  release:
+    types:
+      - published
+
+jobs:
+  boost_python:
+    name: ${{ matrix.os_short }} ${{ matrix.boost_architecture }} ${{ matrix.boost_address_model }}-bit
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        os_arch: [
+          "windows-x86-32",
+          "windows-x86-64",
+          "windows-arm-64",
+          "macos-x86-64",
+          "macos-arm-64",
+          "linux-x86-64",
+          "linux-arm-64",
+        ]
+        include:
+          - os_arch: "windows-x86-32"
+            os: "windows-2022"
+            os_short: "windows"
+            cibuildwheel_architecture: "x86"
+            boost_architecture: "x86"
+            boost_address_model: "32"
+          - os_arch: "windows-x86-64"
+            os: "windows-2022"
+            os_short: "windows"
+            cibuildwheel_architecture: "AMD64"
+            boost_architecture: "x86"
+            boost_address_model: "64"
+          - os_arch: "windows-arm-64"
+            os: "windows-2022"
+            os_short: "windows"
+            cibuildwheel_architecture: "ARM64"
+            boost_architecture: "arm"
+            boost_address_model: "64"
+          - os_arch: "macos-x86-64"
+            os: "macos-11.0"
+            os_short: "macos"
+            cibuildwheel_architecture: "x86_64"
+            boost_architecture: "x86"
+            boost_address_model: "64"
+          - os_arch: "macos-arm-64"
+            os: "macos-11.0"
+            os_short: "macos"
+            cibuildwheel_architecture: "arm64"
+            boost_architecture: "arm"
+            boost_address_model: "64"
+          - os_arch: linux-x86-64
+            os: "ubuntu-22.04"
+            os_short: "linux"
+            cibuildwheel_architecture: "x86_64"
+            boost_architecture: "x86"
+            boost_address_model: "64"
+          - os_arch: linux-arm-64
+            os: "ubuntu-22.04"
+            os_short: "linux"
+            cibuildwheel_architecture: "aarch64"
+            boost_architecture: "arm"
+            boost_address_model: "64"
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        if: matrix.architecture == 'aarch64'
+        with:
+          platforms: arm64
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.11.2
+        env:
+          CIBW_PLATFORM: ${{ matrix.os_short }}
+          CIBW_BUILD_VERBOSITY: "1"
+          CIBW_ARCHS: ${{ matrix.cibuildwheel_architecture }}
+          CIBW_ENVIRONMENT: >
+            BOOST_ADDRESS_MODEL="${{ matrix.boost_address_model }}"
+            BOOST_ARCHITECTURE="${{ matrix.boost_architecture }}"
+          CIBW_ENVIRONMENT_PASS_WINDOWS: BOOST_ADDRESS_MODEL BOOST_ARCHITECTURE
+          CIBW_ENVIRONMENT_PASS_MACOS: BOOST_ADDRESS_MODEL BOOST_ARCHITECTURE
+          CIBW_ENVIRONMENT_PASS_LINUX: BOOST_ADDRESS_MODEL BOOST_ARCHITECTURE
+      - name: Compress Boost.Python
+        shell: bash
+        run: |
+          if [ -d "boost_1_80_0" ]; then
+            tar -czf boost-python-precompiled-${{ matrix.os_short }}-${{ matrix.boost_architecture }}-${{ matrix.boost_address_model }}-bit.tar.gz boost_1_80_0 || true
+          fi
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.os_short }}
+          path: |
+            ./boost-python-precompiled*.tar.gz
+  publish-github:
+    name: publish to Github
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [
+      boost_python,
+    ]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v3
+        with:
+          path: prebuilds
+      - name: Display structure of downloaded files
+        run: ls -R
+        working-directory: prebuilds
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            prebuilds/macos/*
+            prebuilds/linux/*
+            prebuilds/windows/*

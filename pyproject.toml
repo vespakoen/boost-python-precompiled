@@ -1,0 +1,24 @@
+[project]
+name = "dummy"
+version = "1.0.0"
+description = ""
+readme = "README.md"
+authors = [
+  { name = "Koen Schmeets", email="koen@schmeets.de" }
+]
+requires-python = ">=3.6"
+
+[tool.cibuildwheel]
+build = ["cp37*", "cp38*", "cp39*", "cp310*", "cp311*"]
+skip = ["pp*", "*-musllinux*", "*-manylinux_i686"]
+repair-wheel-command = ""
+before-build = "cd {package} && bash ./compile.sh"
+
+[tool.cibuildwheel.windows]
+archs = ["AMD64", "x86", "ARM64"]
+
+[tool.cibuildwheel.linux]
+archs = ["x86_64", "aarch64"]
+
+[tool.cibuildwheel.macos]
+archs = ["x86_64", "arm64"]
