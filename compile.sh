@@ -64,7 +64,7 @@ install_boost () {
     ./b2 \
         ${OCL_CLEAN:+"-a"} \
         -j2 \
-        --layout="system" \
+        --layout="tagged" \
         --with-python \
         --user-config="user-config.jam" \
         threading="multi" \
