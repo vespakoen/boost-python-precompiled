@@ -88,8 +88,7 @@ install_boost () {
         --user-config="user-config.jam" \
         threading="multi" \
         variant="${boost_variant}" \
-        runtime-link="shared,static" \
-        link="shared,static" \
+        link="static" \
         ${is_macos:+"cflags=\"-fPIC\""} \
         ${is_macos:+"cxxflags=\"-fPIC\""} \
         ${is_linux:+"cflags=\"-fPIC\""} \
