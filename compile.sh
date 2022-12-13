@@ -2,8 +2,10 @@
 
 set -e
 
-boost_url="https://boostorg.jfrog.io/artifactory/main/release/1.80.0/source/boost_1_80_0.tar.gz"
-boost_variant="release"
+boost_version="1.80.0"
+boost_version_underscored="${boost_version//./_}"
+boost_url="https://boostorg.jfrog.io/artifactory/main/release/${boost_version}/source/boost_${boost_version_underscored}.tar.gz"
+boost_variant="debug,release"
 project_dir=$(pwd)
 primary='\033[1;34m'
 secondary='\033[1;35m'
@@ -25,7 +27,7 @@ get_os() {
 determined_os=$(get_os)
 
 download_boost() {
-    if [ ! -d boost_1_80_0 ]; then
+    if [ ! -d "boost_${boost_version_underscored}" ]; then
         prettyprint "Downloading boost.tar.gz"
         curl "${boost_url}" --output "${TMPDIR:-"/tmp"}/boost.tar.gz" --silent --location
 
@@ -33,7 +35,7 @@ download_boost() {
         tar -zxf "${TMPDIR:-"/tmp"}/boost.tar.gz" -C .
         (
             prettyprint "Applying boost-python-3.11.patch"
-            cd boost_1_80_0/libs/python
+            cd "boost_${boost_version_underscored}/libs/python"
             git apply --ignore-space-change --ignore-whitespace "${project_dir}/boost-python-3.11.patch"
         )
     else
@@ -44,7 +46,7 @@ download_boost() {
 install_boost () {
     cd "${project_dir}"
     download_boost
-    cd "${project_dir}/boost_1_80_0"
+    cd "${project_dir}/boost_${boost_version_underscored}"
     python_version=$(python -c 'import sys; version=sys.version_info[:3]; print("{0}.{1}".format(*version))')
     python_include_dir=$(python -c 'from sysconfig import get_paths as gp; print(gp()["include"])')
     if [ "${determined_os}" = "windows" ]; then
@@ -79,5 +81,5 @@ install_boost
 if [ "${determined_os}" == "linux" ]; then
     # on linux, we compile boost python in a container, so we have to
     # copy the compiled boost python out of the container and into the github runner
-    cp --recursive --no-clobber "${project_dir}/boost_1_80_0" /host/home/runner/work/boost-python-precompiled/boost-python-precompiled
+    cp --recursive --no-clobber "${project_dir}/boost_${boost_version_underscored}" /host/home/runner/work/boost-python-precompiled/boost-python-precompiled
 fi

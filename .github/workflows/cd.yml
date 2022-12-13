@@ -56,13 +56,13 @@ jobs:
             cibuildwheel_architecture: "arm64"
             boost_architecture: "arm"
             boost_address_model: "64"
-          - os_arch: linux-x86-64
+          - os_arch: "linux-x86-64"
             os: "ubuntu-22.04"
             os_short: "linux"
             cibuildwheel_architecture: "x86_64"
             boost_architecture: "x86"
             boost_address_model: "64"
-          - os_arch: linux-arm-64
+          - os_arch: "linux-arm-64"
             os: "ubuntu-22.04"
             os_short: "linux"
             cibuildwheel_architecture: "aarch64"
@@ -74,10 +74,10 @@ jobs:
           fetch-depth: 0
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
-        if: matrix.architecture == 'aarch64'
+        if: matrix.os_short == 'linux' && matrix.cibuildwheel_architecture == 'aarch64'
         with:
           platforms: arm64
-      - name: Build wheels
+      - name: Build Boost
         uses: pypa/cibuildwheel@v2.11.2
         env:
           CIBW_PLATFORM: ${{ matrix.os_short }}

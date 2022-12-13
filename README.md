@@ -10,7 +10,7 @@ This project compiles Boost.Python for Windows, Linux and macOS, the most common
 | Linux   | x86-64, arm-64         | v3.7 - v3.11 |
 | macOS   | x86-64, arm-64         | v3.7 - v3.11 |
 
-The libraries are compiled with `variant="release"`, `link="static"` and `cxxflags="-fPIC"`, making them suitable for static linking only.
+The libraries are compiled with `variant="debug,release"`, `link="static"` and `cxxflags="-fPIC"`, making them suitable for static linking only.
 
 ## How it works
 
