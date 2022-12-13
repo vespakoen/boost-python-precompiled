@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+set -x
 
 boost_version="1.80.0"
 boost_version_underscored="${boost_version//./_}"
@@ -77,7 +78,7 @@ install_boost () {
     fi
     prettyprint "Compiling boost " "${BOOST_ADDRESS_MODEL:-"64"}-bit ${BOOST_ARCHITECTURE} for Python v${python_version}"
     ./b2 \
-        ${OCL_CLEAN:+"-a"} \
+        -a \
         -j "${num_procs}" \
         ${is_windows:+"--layout=versioned"} \
         ${is_macos:+"--layout=tagged-1.66"} \
@@ -89,8 +90,10 @@ install_boost () {
         variant="${boost_variant}" \
         runtime-link="shared,static" \
         link="shared,static" \
-        cflags="-fPIC" \
-        cxxflags="-fPIC" \
+        ${is_macos:+"cflags=\"-fPIC\""} \
+        ${is_macos:+"cxxflags=\"-fPIC\""} \
+        ${is_linux:+"cflags=\"-fPIC\""} \
+        ${is_linux:+"cxxflags=\"-fPIC\""} \
         address-model="${BOOST_ADDRESS_MODEL:-"64"}" \
         ${BOOST_ARCHITECTURE:+"architecture=${BOOST_ARCHITECTURE}"} \
         stage
