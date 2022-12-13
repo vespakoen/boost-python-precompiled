@@ -6,6 +6,7 @@ boost_version="1.80.0"
 boost_version_underscored="${boost_version//./_}"
 boost_url="https://boostorg.jfrog.io/artifactory/main/release/${boost_version}/source/boost_${boost_version_underscored}.tar.gz"
 boost_variant="debug,release"
+python_executable="python"
 project_dir=$(pwd)
 primary='\033[1;34m'
 secondary='\033[1;35m'
@@ -25,6 +26,17 @@ get_os() {
     fi
 }
 determined_os=$(get_os)
+
+num_procs() {
+    if [ "${determined_os}" = "macos" ]; then
+        sysctl -n hw.logicalcpu
+    elif [ "${determined_os}" = "linux" ]; then
+        nproc
+    else
+        echo "${NUMBER_OF_PROCESSORS:-"2"}"
+    fi
+}
+num_procs=$(num_procs)
 
 download_boost() {
     if [ ! -d "boost_${boost_version_underscored}" ]; then
@@ -47,12 +59,12 @@ install_boost () {
     cd "${project_dir}"
     download_boost
     cd "${project_dir}/boost_${boost_version_underscored}"
-    python_version=$(python -c 'import sys; version=sys.version_info[:3]; print("{0}.{1}".format(*version))')
-    python_include_dir=$(python -c 'from sysconfig import get_paths as gp; print(gp()["include"])')
+    python_version=$(${python_executable} -c 'import sys; version=sys.version_info[:3]; print("{0}.{1}".format(*version))')
+    python_include_dir=$(${python_executable} -c 'from sysconfig import get_paths as gp; print(gp()["include"])')
     if [ "${determined_os}" = "windows" ]; then
         python_include_dir=$(cygpath -w "${python_include_dir}")
     fi
-    echo "using python : ${python_version} : python : ${python_include_dir//\\/\\\\} ;" > user-config.jam
+    echo "using python : ${python_version} : ${python_executable} : ${python_include_dir//\\/\\\\} ;" > user-config.jam
     cat user-config.jam
     prettyprint "Bootstrapping boost"
     if [ "${determined_os}" = "windows" ]; then
@@ -63,13 +75,15 @@ install_boost () {
     prettyprint "Compiling boost " "${BOOST_ADDRESS_MODEL:-"64"}-bit ${BOOST_ARCHITECTURE} for Python v${python_version}"
     ./b2 \
         ${OCL_CLEAN:+"-a"} \
-        -j2 \
-        --layout="tagged" \
+        -j "${num_procs}" \
+        --layout="tagged-1.66" \
         --with-python \
         --user-config="user-config.jam" \
         threading="multi" \
         variant="${boost_variant}" \
-        link="static" \
+        runtime-link="shared,static" \
+        link="shared,static" \
+        cflags="-fPIC" \
         cxxflags="-fPIC" \
         address-model="${BOOST_ADDRESS_MODEL:-"64"}" \
         ${BOOST_ARCHITECTURE:+"architecture=${BOOST_ARCHITECTURE}"} \
