@@ -74,7 +74,7 @@ jobs:
           fetch-depth: 0
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
-        if: matrix.os_short == 'linux' && matrix.cibuildwheel_architecture == 'aarch64'
+        if: ${{ matrix.os_short == 'linux' && matrix.cibuildwheel_architecture == 'aarch64' }}
         with:
           platforms: arm64
       - name: Build Boost
