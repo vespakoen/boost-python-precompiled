@@ -49,11 +49,8 @@ download_boost() {
 
         prettyprint "Extracting boost.tar.gz..."
         tar -zxf "${TMPDIR:-"/tmp"}/boost.tar.gz" -C .
-        (
-            prettyprint "Applying boost-python-3.11.patch"
-            cd "boost_${boost_version_underscored}/libs/python"
-            git apply --ignore-space-change --ignore-whitespace "${project_dir}/boost-python-3.11.patch"
-        )
+        prettyprint "Applying boost-python-3.11.patch"
+        git apply --ignore-space-change --ignore-whitespace --directory "boost_${boost_version_underscored}/libs/python" boost-python-3.11.patch
     else
         prettyprint "Boost already found, re-using..."
     fi
